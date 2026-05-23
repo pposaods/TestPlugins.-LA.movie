@@ -1,0 +1,8 @@
+{
+  "name": "LaMovie Repository",
+  "description": "Extensión para la.movie — películas, series y anime en español",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/TU_USUARIO/LaMovieProvider/builds/plugins.json"
+  ]
+}

@@ -1,58 +1,93 @@
-**⚠️ This is currently under development, dont use it yet if you're not comfortable with constantly merging new changes**
+# La.Movie – CloudStream Extension
 
-# `Cloudstream3 Plugin Repo Template`
+CloudStream plugin for **la.movie** — pelíuclas, series y anime en español latino.
 
-Template for a [Cloudstream3](https://github.com/recloudstream) plugin repo
+---
 
-**⚠️ Make sure you check "Include all branches" when using this template**
+## ⚠️ Before This Works: Fix the CSS Selectors
 
- 
-## Getting started with writing your first plugin
+This extension was generated with the correct **structure and logic** for a CloudStream provider, but the CSS selectors that scrape la.movie's HTML **must be verified** by inspecting the real site.
 
-This template includes 1 example plugin.
+Open `LaMovieProvider/src/main/kotlin/com/lagradost/LaMovieProvider.kt` and search for every comment marked:
 
-1. Open the root build.gradle.kts, read the comments and replace all the placeholders
-2. Familiarize yourself with the project structure. Most files are commented
-3. Build or deploy your first plugin using:
-   - Windows: `.\gradlew.bat ExampleProvider:make` or `.\gradlew.bat ExampleProvider:deployWithAdb`
-   - Linux & Mac: `./gradlew ExampleProvider:make` or `./gradlew ExampleProvider:deployWithAdb`
+```
+// TODO: VERIFY
+```
 
+For each one, open `la.movie` in Chrome/Firefox, press **F12** to open DevTools, and find the matching HTML element to copy the correct CSS selector.
 
-## Granting All Files Access on Newer Android Devices
+### What you'll need to verify
 
-For local plugin testing, you need to grant the app "All Files Access" on newer Android devices (Android 11 and above). Here’s how to do it:
+| Part | What to check |
+|---|---|
+| `getMainPage` | Selector for movie/series cards on listing pages |
+| `toSearchResult` | Selectors for title, poster image, and link inside a card |
+| `search()` | The correct search URL (e.g. `/?s=query` or `/buscar?q=query`) |
+| `load()` | Selectors for title, poster, plot, year, genres on a detail page |
+| `load()` (series) | Selectors for episode list and season groupings |
+| `loadLinks()` | How the video embed/iframe URL is stored in the page |
 
-### Using ADB
+---
 
-* `adb shell appops set --uid PACKAGE_NAME MANAGE_EXTERNAL_STORAGE allow`
-* Replace `PACKAGE_NAME` with the name of the package for the Cloudstream3 version you are using:
-   - debug: `com.lagradost.cloudstream3.prerelease.debug`
-   - prerelease: `com.lagradost.cloudstream3.prerelease`
-   - stable: `com.lagradost.cloudstream3`
+## Project Setup
 
-### Manually
+### Requirements
+- Android Studio (Hedgehog or newer)
+- JDK 17
+- A GitHub account
 
-1. **Open Settings**: Go to your device’s Settings menu.
+### Steps
 
-2. **Navigate to Special Access**:
-   - Tap on "Apps & notifications" or "Apps".
-   - Select "Special app access" or "Special access".
+1. **Fork the [CloudStream plugin template](https://github.com/recloudstream/TestPlugins)**  
+   This gives you the Gradle setup and build tooling.
 
-3. **Select All Files Access**:
-   - Tap on "All files access".
-   - It may be under the three vertical dots menu towards the top of the screen.
+2. **Copy these files into your fork:**
+   - `LaMovieProvider/` folder (the whole thing)
+   - Update `settings.gradle.kts` to include `:LaMovieProvider`
 
-4. **Grant Access to the App**: Find the app in the list and tap on it to toggle it, if it is not already enabled.
+3. **Fix the CSS selectors** (see above)
 
-6. **Restart the App**: Close and reopen the app to apply the changes.
+4. **Build locally** to verify it compiles:
+   ```bash
+   ./gradlew :LaMovieProvider:make
+   ```
 
+5. **Push to GitHub** — the included GitHub Actions workflow auto-builds and publishes to a `builds` branch.
 
-## License
+6. **Add to CloudStream:**  
+   Settings → Extensions → Add Repository → paste your `repo.json` URL:
+   ```
+   https://raw.githubusercontent.com/TU_USUARIO/LaMovieProvider/builds/repo.json
+   ```
+   Replace `TU_USUARIO` with your GitHub username.
 
-Everything in this repo is released into the public domain. You may use it however you want with no conditions whatsoever
+---
 
+## How the Extension Works
 
-## Attribution
+```
+User opens CloudStream
+    └── getMainPage()   ← shows rows of movies/series
+    └── search()        ← handles search queries
 
-This template as well as the gradle plugin and the whole plugin system is **heavily** based on [Aliucord](https://github.com/Aliucord).
-*Go use it, it's a great mobile discord client mod!*
+User taps a title
+    └── load()          ← fetches metadata + episode list
+
+User taps Play
+    └── loadLinks()     ← finds the video embed URL
+        └── loadExtractor() ← CloudStream's built-in extractor
+                             handles ~50 known video hosts
+                             (Streamtape, Doodstream, Filemoon, etc.)
+```
+
+---
+
+## Troubleshooting
+
+**"No links found"** — `loadLinks()` selector is wrong. Inspect the player page.
+
+**Empty home screen** — `getMainPage()` selector is wrong. Check the card container HTML.
+
+**Wrong titles/posters** — `toSearchResult()` selectors need updating.
+
+**Search returns nothing** — The search URL format is wrong. Check the network tab in DevTools when searching on la.movie.
